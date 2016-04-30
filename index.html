@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Basic Example with JSX</title>
+    <link rel="stylesheet" href="./examples/shared/css/base.css" />
+  </head>
+  <body id="container">
+    <h1>Basic Example with JSX</h1>
+    <div id="container">
+      <p>
+        To install React, follow the instructions on
+        <a href="https://github.com/facebook/react/">GitHub</a>.
+      </p>
+      <p>
+        If you can see this, React is <strong>not</strong> working right.
+        If you checked out the source from GitHub make sure to run <code>grunt</code>.
+      </p>
+    </div>
+    <h4>Example Details</h4>
+    <p>This is written with JSX and transformed in the browser.</p>
+    <p>
+      Learn more about React at
+      <a href="https://facebook.github.io/react" target="_blank">facebook.github.io/react</a>.
+    </p>
+    <script src="./build/react.js"></script>
+    <script src="./build/react-dom.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.24/browser.min.js"></script>
+    <script type="text/babel">
+
+    	const ENTER_KEY = 13;
+      let id = 0;
+
+      const Todo = React.createClass({
+        handleOnclick() {
+          console.log('toggle')
+          const { todo, toggleTodo } = this.props
+          toggleTodo(todo);
+        },
+        render() {
+          const { todo, deleteTodo } = this.props
+
+          return (
+            <div>
+              <h3>
+              <span onClick={this.handleOnclick}>
+              {todo.completed ? <strike>{todo.title}</strike> : todo.title}
+              </span>
+              <a href="#" onClick={() => deleteTodo(todo)}>X</a>
+              </h3>
+            </div>
+          );
+        }
+      });
+
+      const TodoList = React.createClass({
+        render() {
+          const { todos, deleteTodo, toggleTodo } = this.props
+
+          return (
+            <div>
+              {
+                todos.map(todo =>
+                  <Todo todo={todo}
+                        deleteTodo={deleteTodo}
+                        toggleTodo={toggleTodo}
+                  />
+                )
+              }
+            </div>
+          );
+        }
+      });
+
+      const NewTodo = React.createClass({
+        getInitialState() {
+          return {  };
+        },
+        handleChange(event) {
+    			this.setState({newTodo: event.target.value});
+    		},
+        handleKeyDown(event) {
+          if (event.keyCode !== ENTER_KEY) {
+    				return;
+    			}
+    			event.preventDefault();
+
+          const { addTodo } = this.props
+          const { newTodo } = this.state
+
+          console.log(newTodo);
+          if (!newTodo) {
+            return;
+          }
+
+          addTodo(newTodo);
+          this.setState( { newTodo: "" } );
+        },
+        render() {
+          return (
+            <div>
+              <input
+                type="text"
+                value={this.state.newTodo}
+                onKeyDown={this.handleKeyDown}
+                onChange={this.handleChange}
+              />
+            </div>
+          );
+        }
+      });
+
+      const createNewTodo = (text) => {
+          return {id: id++, title: text}
+      }
+
+      const filterTodos = (todos, filter) => {
+          switch (filter) {
+            case 'ALL':
+              return todos
+              break;
+            case 'COMPLETED':
+              return todos.filter(t => t.completed)
+              break;
+            case 'UNCOMPLETED':
+              return todos.filter(t => !t.completed)
+              break;
+            default:
+              []
+          }
+      }
+
+      const toggleAll = (todos) => {
+        return todos.map(todo => Object.assign({}, todo, {completed: true}));
+      }
+
+      var Application = React.createClass({
+        getInitialState() {
+          let todos = [{ id: 0, title: 'todo#0'}];
+          let currentFilter = 'ALL';
+          return {
+            todos: todos,
+            filteredTodos: filterTodos(todos, currentFilter),
+            currentFilter: currentFilter
+          };
+        },
+        handleRemove(todo) {
+          const {todos} = this.state;
+          const newTodos = Object.assign([], todos.filter(t => t !== todo));
+          this.setState({ todos: newTodos });
+        },
+        handleAddTodo(text) {
+          const {todos} = this.state;
+          todos.push(createNewTodo(text));
+          this.setState({todos: todos });
+        },
+        handleToggle(todoToToggle) {
+          const {todos} = this.state;
+          const newTodos = todos.map( (todo) => {
+      			return todo !== todoToToggle ?
+      				todo :
+      				Object.assign({}, todo, {completed: !todo.completed});
+      		});
+          this.setState({todos: newTodos });
+        },
+        handleFilter(filter) {
+          this.setState({...this.state, currentFilter: filter});
+        },
+        handleCheckAll() {
+          const {todos} = this.state;
+          this.setState({...this.state, todos: toggleAll(todos)});
+        },
+
+        render: function() {
+          const {todos,currentFilter} = this.state
+          const filteredTodos = filterTodos(todos, currentFilter);
+          return (
+            <div>
+            <NewTodo addTodo={(text) => this.handleAddTodo(text)}
+            />
+            <TodoList todos={filteredTodos}
+                      deleteTodo={(todo) => this.handleRemove(todo)}
+                      toggleTodo={(todo) => this.handleToggle(todo)}
+            />
+            <Filters changeFilter={(filter) => this.handleFilter(filter)}
+                     currentFilter={currentFilter}
+            />
+            {todos.length}
+              <span> items left</span> &nbsp;
+              <button onClick={this.handleCheckAll}>Check all</button>
+            </div>
+          );
+        }
+      });
+
+      const Filters = React.createClass({
+
+        render() {
+          const { changeFilter, currentFilter} = this.props
+          return (
+            <div>
+                {currentFilter === 'ALL' ? <span>all</span> : <a href="#" onClick={() => changeFilter('ALL')}>all</a>}
+              &nbsp;|&nbsp;
+                {currentFilter === 'COMPLETED'? <span>completed</span> :  <a href="#" onClick={() =>changeFilter('COMPLETED')}>completed</a>}
+              &nbsp;|&nbsp;
+                { currentFilter === 'UNCOMPLETED' ?  <span>uncompleted</span> :  <a href="#" onClick={() =>changeFilter('UNCOMPLETED')}>uncompleted</a>}
+
+            </div>
+          );
+        }
+      });
+
+      ReactDOM.render(
+        <Application />,
+        document.getElementById('container')
+      );
+
+
+
+    </script>
+  </body>
+</html>
